@@ -72,7 +72,7 @@
                         </goals>
                         <configuration>
                             <includeScope>runtime</includeScope>
-                            <outputDirectory>${project.build.directory}/depedency-jars</outputDirectory>
+                            <outputDirectory>${project.build.directory}/dependency-jars</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>
