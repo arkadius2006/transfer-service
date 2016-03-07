@@ -30,4 +30,8 @@ public class Server {
         httpServer.start();
     }
 
+    public void stop() {
+        httpServer.stop(0);
+    }
+
 }

@@ -12,27 +12,6 @@ import java.net.URL;
 
 public class Client {
 
-
-    public static void main(String[] args) throws Exception {
-        Client client = new Client();
-
-        // insert
-        client.insert(new Account("1", 100.0));
-        client.insert(new Account("2", 200.0));
-
-        // check
-        System.out.println(client.get("1"));
-        System.out.println(client.get("2"));
-
-        // transfer
-        client.transter(new Transfer("1", "2", 50.0));
-
-
-        // check
-        System.out.println(client.get("1"));
-        System.out.println(client.get("2"));
-    }
-
     public Account get(String accountId) throws IOException {
         System.out.println("Fetching account #" + accountId);
 

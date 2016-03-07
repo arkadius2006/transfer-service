@@ -7,6 +7,7 @@ import com.revolut.transfer.service.*;
 import com.revolut.transfer.server.ServiceHttpHandler;
 import com.sun.net.httpserver.HttpHandler;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,20 +16,32 @@ public class TransferMain {
     final private static int PORT = 8080;
 
     public static void main(String args[]) throws Exception {
-        // datastore
+        new TransferMain().start();
+    }
+
+    final private Server server;
+
+    public TransferMain() throws Exception {
+        // create datastore
         Datastore datastore = createDatastore();
 
-        // services and http handler
+        // create services and http handler
         List<Service> services = createServices(datastore);
         HttpHandler handler = new ServiceHttpHandler(services);
 
-        // http server
-        Server server = new Server(PORT, CONTENT_ROOT, handler);
+        // create http server
+        server = new Server(PORT, CONTENT_ROOT, handler);
+    }
 
+    public void start() throws IOException {
         server.start();
     }
 
-    private static Datastore createDatastore() throws DatastoreException {
+    public void stop() {
+        server.stop();
+    }
+
+    private Datastore createDatastore() throws DatastoreException {
         Datastore datastore = new Datastore();
         // datastore.insertAccount(new Account("1", 100));
         // datastore.insertAccount(new Account("2", 200));
@@ -37,7 +50,7 @@ public class TransferMain {
         return datastore;
     }
 
-    private static List<Service> createServices(Datastore datastore) {
+    private List<Service> createServices(Datastore datastore) {
         List<Service> services = new ArrayList<Service>();
         // services.add(new SoutService());
         services.add(new GetAccountService(datastore));
