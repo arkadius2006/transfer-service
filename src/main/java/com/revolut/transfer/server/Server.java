@@ -5,6 +5,7 @@ import com.sun.net.httpserver.HttpServer;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.concurrent.Executors;
 
 /**
  * Simple HTTP server.
@@ -25,7 +26,7 @@ public class Server {
     public void start() throws IOException {
         httpServer = HttpServer.create(new InetSocketAddress(port), 0);
         httpServer.createContext(contentRoot, handler);
-        httpServer.setExecutor(null);
+        httpServer.setExecutor(Executors.newCachedThreadPool());
 
         httpServer.start();
     }

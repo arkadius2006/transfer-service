@@ -27,13 +27,13 @@ public class GetAccountService implements Service {
 
     @Override
     public void serve(HttpExchange httpExchange) throws IOException {
-        String accountId = getAccountId(httpExchange.getRequestURI().getPath());
+        long accountId = getAccountId(httpExchange.getRequestURI().getPath());
 
-        Account account = datastore.getAccount(accountId);
-        if (account != null) {
+        try {
+            Account account = datastore.getAccount(accountId);
             httpExchange.sendResponseHeaders(200, 0);
             Account.write(account, httpExchange.getResponseBody());
-        } else {
+        } catch (Exception x) {
             httpExchange.sendResponseHeaders(400, 0);
             IOUtilities.writeMessage("Account not found", httpExchange.getResponseBody());
         }
@@ -76,8 +76,8 @@ public class GetAccountService implements Service {
 
     }
 
-    private String getAccountId(String path) {
+    private long getAccountId(String path) {
         String[] parts = path.split("/");
-        return parts[3];
+        return Long.parseLong(parts[3]);
     }
 }

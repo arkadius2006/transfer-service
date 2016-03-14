@@ -6,6 +6,8 @@ import org.apache.log4j.Logger;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * In-memory account dao.
@@ -13,51 +15,55 @@ import java.util.Map;
 public class Datastore {
     final private static Logger logger  = Logger.getLogger(Datastore.class);
 
-    final private Map<String,Account> map = new HashMap<String,Account>();
+    final private ConcurrentMap<Long,Account> map = new ConcurrentHashMap<Long, Account>();
 
-    public synchronized Account getAccount(String id) {
+    public Account getAccount(long id) throws DatastoreException {
         Account account = map.get(id);
+        if (account == null) {
+            throw new DatastoreException("No such account: " + id);
+        }
         logger.info("Retrieved account for id #" + id + ": " + account);
         return account;
     }
 
-    public synchronized void insertAccount(Account account) throws DatastoreException {
-        if (map.containsKey(account.getId())) {
+    public void insertAccount(Account account) throws DatastoreException {
+        Account prevAccount = map.putIfAbsent(account.getId(), account);
+        if (prevAccount != null) {
             throw new DatastoreException("Account #" + account.getId() + " already exists");
         }
-
-        map.put(account.getId(), account);
         logger.info("Inserted account: " + account);
     }
 
-    public synchronized void transfer(Transfer transfer) throws DatastoreException {
-        Account fromAccount = map.get(transfer.getFromId());
-        if (fromAccount == null) {
-            throw new DatastoreException("Account #" + transfer.getFromId() + " not found");
-        }
-
-        Account toAccount = map.get(transfer.getToId());
-        if (toAccount == null) {
-            throw new DatastoreException("Account #" + transfer.getToId() + " not found");
-        }
-
-        if (transfer.getAmount() <= 0) {
-            throw new DatastoreException("Transfer amount is negative: " + transfer.getAmount());
-        }
-
-        // check fromAccount has sufficient money
-        if (fromAccount.getAmount() < transfer.getAmount()) {
-            throw new DatastoreException("Not enough money on account #" + fromAccount.getId());
-        }
-
-        // do transfer
-        map.put(fromAccount.getId(), addAmount(fromAccount, -transfer.getAmount()));
-        map.put(toAccount.getId(), addAmount(toAccount, transfer.getAmount()));
-
-        logger.info("Transfered: " + transfer);
+    public void transfer(Transfer transfer) throws DatastoreException {
+        transfer(transfer.getFromId(), transfer.getToId(), transfer.getAmount());
     }
 
-    private static Account addAmount(Account origin, double money) {
-        return new Account(origin.getId(), origin.getAmount() + money);
+    private void transfer(long fromId, long toId, double money) throws DatastoreException {
+        transfer(getAccount(fromId), getAccount(toId), money);
+    }
+
+    private void transfer(Account from, Account to, double money) throws DatastoreException {
+        if (money <= 0) {
+            throw new IllegalArgumentException("money <=0");
+        }
+
+        Account first;
+        Account second;
+
+        if (from.getId() <= to.getId()) {
+            first = from;
+            second = to;
+        } else {
+            first = to;
+            second = from;
+        }
+
+        // acquire monitors in predefined order to avoid deadlock
+        synchronized (first) {
+            synchronized (second) {
+                from.withdraw(money); // this method will throw Exception if not sufficient funds
+                to.deposit(money);
+            }
+        }
     }
 }

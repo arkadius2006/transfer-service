@@ -7,25 +7,46 @@ import java.io.OutputStream;
 import java.util.Properties;
 
 public class Account {
-    final private String id;
-    final private double amount;
+    final private long id;
+    private double balance;
 
-    public Account(String id, double amount) {
+    public Account(long id, double balance) {
         this.id = id;
-        this.amount = amount;
+        this.balance = balance;
     }
 
-    public String getId() {
+    public synchronized long getId() {
         return id;
     }
 
-    public double getAmount() {
-        return amount;
+    public synchronized double getBalance() {
+        return balance;
+    }
+
+    public synchronized void withdraw(double money) {
+        if (money <= 0) {
+            throw new IllegalArgumentException("money <= 0");
+        }
+
+        final double newBalance = balance - money;
+        if (newBalance < 0.0) {
+            throw new IllegalArgumentException("Insufficient funds");
+        }
+
+        balance = newBalance;
+    }
+
+    public synchronized void deposit(double money) {
+        if (money <= 0) {
+            throw new IllegalArgumentException("money <= 0");
+        }
+
+        balance = balance + money;
     }
 
     @Override
     public String toString() {
-        return "{id : " + id + ", amount : " + amount + "}";
+        return "{id : " + id + ", balance : " + balance + "}";
     }
 
     public static void write(Account account, OutputStream out) throws IOException {
@@ -35,8 +56,8 @@ public class Account {
 
     private static Properties toProperties(Account account) {
         Properties properties = new Properties();
-        properties.setProperty("account.id", account.getId());
-        properties.setProperty("account.amount", account.getAmount() + "");
+        properties.setProperty("account.id", account.getId() + "");
+        properties.setProperty("account.balance", account.getBalance() + "");
         return properties;
     }
 
@@ -47,7 +68,7 @@ public class Account {
     }
 
     private static Account fromProperties(Properties properties) {
-        return new Account(properties.getProperty("account.id"), Double.parseDouble(properties.getProperty("account.amount")));
+        return new Account(Long.parseLong(properties.getProperty("account.id")), Double.parseDouble(properties.getProperty("account.balance")));
     }
 }
 

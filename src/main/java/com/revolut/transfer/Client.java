@@ -12,7 +12,7 @@ import java.net.URL;
 
 public class Client {
 
-    public Account get(String accountId) throws IOException {
+    public Account get(long accountId) throws IOException {
         System.out.println("Fetching account #" + accountId);
 
         String path = "/transferservice/accounts/" + accountId;
